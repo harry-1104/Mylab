@@ -1,4 +1,6 @@
 # Chuong trinh tim UCLN
+#
+#
 
 uocA = []
 uocB = []
