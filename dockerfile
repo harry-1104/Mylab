@@ -1,37 +1,22 @@
-# Use a base image
 FROM ubuntu:latest
 
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    curl \
-    libasound2 \
-    libatk1.0-0 \
-    libgtk-3-0 \
-    libx11-xcb1 \
-    libxtst6 \
-    tigervnc-standalone-server \
-    x11vnc \
-    xvfb \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y ubuntu-desktop
 
-# Download and install the browser (example: Brave)
-RUN curl -sSL https://brave-browser-apt-release.s3.brave.com/brave-core.asc | apt-key --keyring /etc/apt/trusted.gpg.d/brave-browser-release.gpg add -
-RUN echo "deb [arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" | tee /etc/apt/sources.list.d/brave-browser-release.list
-RUN apt-get update && apt-get install -y brave-browser
+RUN rm /run/reboot-required*
 
-# Set up the VNC server
-ENV DISPLAY=:1
-ENV VNC_RESOLUTION=1280x720
-RUN Xvfb $DISPLAY -screen 0 $VNC_RESOLUTION -ac +extension RANDR && \
-    x11vnc -display $DISPLAY -rfbport 5900 -rfbauth /root/.vnc/passwd -noxdamage -wait 5 -shared -forever && \
-    mkdir -p /root/.vnc && \
-    x11vnc -storepasswd secret /root/.vnc/passwd
+RUN useradd -m testuser -p $(openssl passwd 1234)
+RUN usermod -aG sudo testuser
 
-# Set up a user to run the browser (optional but recommended for security reasons)
-RUN useradd -m browser-user
-USER browser-user
+RUN apt install -y xrdp
+RUN adduser xrdp ssl-cert
 
-# Set the entry point to start the browser and VNC server
-ENTRYPOINT ["brave-browser-stable"]
+RUN sed -i '3 a echo "\
+export GNOME_SHELL_SESSION_MODE=ubuntu\\n\
+export XDG_SESSION_TYPE=x11\\n\
+export XDG_CURRENT_DESKTOP=ubuntu:GNOME\\n\
+export XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg\\n\
+" > ~/.xsessionrc' /etc/xrdp/startwm.sh
+
+EXPOSE 13389
+
+CMD service dbus start; /usr/lib/systemd/systemd-logind & service xrdp start ; bash
