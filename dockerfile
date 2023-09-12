@@ -17,6 +17,6 @@ export XDG_CURRENT_DESKTOP=ubuntu:GNOME\\n\
 export XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg\\n\
 " > ~/.xsessionrc' /etc/xrdp/startwm.sh
 
-EXPOSE 13389
+EXPOSE 3399
 
 CMD service dbus start; /usr/lib/systemd/systemd-logind & service xrdp start ; bash
